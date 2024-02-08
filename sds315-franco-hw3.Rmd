@@ -1,0 +1,117 @@
+---
+title: "SDS315 HW3"
+author: "Chris Franco"
+date: "2024-02-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+
+library(ggplot2)
+library(mosaic)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(tibble)
+library(dplyr)
+```
+
+* I was unable to knit this as a PDF because kableExtra and knitting to PDF do not comply with each other. I have been trying to fix the problem since SDS313 and have had no luck. 
+
+### Problem 1 ### 
+
+```{r, echo=FALSE}
+creatinine <- read_csv("creatinine.csv")
+
+model_creatinine = lm(creatclear ~ age, data = creatinine)
+```
+
+The regression model that compares the relationship between age and creatinine production is y predicted = 148 - 0.6x where x is the age and y predicted is the predicted creatinine output based on age. As an example if we wanted to find out the predicted creatinine production of a 55-year-old we plug 55 into the x variable, y predicted = 148 - 0.6(55), and get a predicted value of a 115 mL/min creatinine clearance rate. 
+
+According to the model previously stated, it states that for an age increase of one year, the creatinine clearance rate decreases by about -0.6 mL/min. 
+
+The first step to determine who has a healthier clearance rate for their age between a 40-year-old with 135 mL/min and a 60-year-old with 112 mL/min is to calculate the predicted age based on the model for their respective ages. Using the y predicted = 148 - 0.6(x), the predicted creatinine production for a 40 and 60-year-old are 124 and 112 mL/min respectively. The 40-year-old has a higher creatinine production for her age with a 12-point positive residual while the 60-year-old yields a 0 residual. 
+
+### Problem 2 ### 
+
+The beta in terms of stocks measures systematic risk relative to the fluctuation of the market as a whole. To illustrtate, if the stock market's returns increases by 1%, the individual stock will increase by the percentage equivelent to the slope or beta derived from the regression model in respect to the stock market. In the regression models, the parameters for each stock is the movement of the S&P 500 which represents the bulk of the largest companies in the Stock Market. The beta for each stock is perfected by plotting a pair that includes the S&P 500 return rate and one of the 6 companies' return rate for a given date for all observations. The slope is then adjusted to create the least residual error and the alpha and beta which best achive this is reported.
+
+```{r}
+marketmodel <- read_csv("marketmodel.csv")
+
+marketmodel_AAPL = lm(AAPL ~ SPY, data = marketmodel)
+marketmodel_GOOG = lm(GOOG ~ SPY, data = marketmodel)
+marketmodel_MRK = lm(MRK ~ SPY, data = marketmodel)
+marketmodel_JNJ = lm(JNJ ~ SPY, data = marketmodel)
+marketmodel_WMT = lm(WMT ~ SPY, data = marketmodel)
+marketmodel_TGT = lm(TGT ~ SPY, data = marketmodel)
+
+
+```
+
+
+```{r, echo=FALSE}
+tib <- tibble(
+  Ticker = c("AAPL", "GOOG", "MRK", "JNJ", "WMT", "TGT"),
+  Intercept = c(0.009189277, 0.0002330467, -0.0001540208, -2.410714e-05, 0.0006781104, 0.001583341),
+  Beta = c(1.065601, 0.9967746, 0.7136141, 0.677193, 0.5189811, 0.7076485),
+  `Correlation Coefficient` = c(0.01336246, 0.6483015, 0.483701, 0.501943, 0.2853233, 0.2478813)
+)
+```
+
+
+```{r}
+tib %>%
+  kable(caption = "Stock Returns Regressed by the Return of the S&P 500") %>% 
+  kableExtra::kable_classic_2(full_width = FALSE) %>%
+  kable_styling("striped", full_width = FALSE, position = "left")
+
+```
+
+This table displays 6 rows containing 4 variables including the ticker name marker as well as the the intercept (alpha), slope (beta) , and correlation coeffecient for each regression line for each stock derived by regressing accumulitations of stock return rates in respect to the S&P 500 stock return rate. For each 1% increase in the S&P 500 return, the stock return for a company increased by the percentage points of its corresponding slope. The correlation coeffecient of each stock represents the strength and positive relationship between a stock return rate and the return rate of the S&P 500 return rate. 
+
+Systematic risk in terms of beta in this regression model is evaluated based on its relationship with the value "1". If a stock yields a beta higher than 1 it takes on an increased systematic risk than average stocks and if it yields a beta lower than 1 it takes on a decreased systematic risk than average stocks. In the table, the stock with the highest systematic risk is AAPL (Apple) because it is the one stock with a beta higher than 1 and the stock with the lowest systematic risk is WMT (Walmart) because it has the lowest beta value in the table. 
+
+### Question 3 ###
+
+```{r}
+covid <- read_csv("covid.csv")
+```
+
+
+
+```{r}
+italy_covid_deaths <- covid %>% filter(country == "Italy")
+spain_covid_deaths <- covid %>% filter(country == "Spain")
+
+lm_covid_italy = lm(log(deaths) ~ days_since_first_death, data = italy_covid_deaths)
+lm_covid_spain = lm(log(deaths) ~ days_since_first_death, data = spain_covid_deaths)
+```
+
+The estimated growth rate for COVID19 related deaths in Italy is 0.183 and the doubling time for COVID deaths is 4 days. 
+
+The estimated growth rate for COVID19 related deaths in Spain is 0.276 and the doubling time for COVID deaths is 3 days.
+
+```{r, fig.align='center'}
+covid_log <-covid %>%
+  group_by(country, days_since_first_death, deaths) %>%
+    summarise(log_deaths = log(sum(deaths))) %>%
+  ggplot(aes(x = days_since_first_death, y = log_deaths, color = country, group = country)) +
+  geom_line() +
+  theme_bw() +
+  labs(title = "Reported Daily COVID19 Deaths Over Time in Italy and Spain",
+       x = "Days Since First Death",
+       y = "Log(Daily Deaths)") 
+print(covid_log)
+```
+
+### Question 4 ###
+
+```{r}
+milk <- read_csv("milk.csv")
+
+lm_milk = lm(log(sales) ~ log(price), data = milk)
+```
+
+I determined the price elasticity of demand for milk to decrease by 1.62% regardless of the initial price of milk. This was achieved by imposing the power-law model on the relationship between the price and sales in the data set. Both the explanatory and independent variable values were transformed with the log function. After applying this linerization technique the dots were arranged more linearly. 
